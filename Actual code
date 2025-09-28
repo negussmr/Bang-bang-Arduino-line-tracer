@@ -1,0 +1,70 @@
+// Motor Pins
+const int rightMotor = 5;
+const int leftMotor = 6;
+
+// Line Sensor Pins
+const int leftLineSensor = 7;
+const int rightLineSensor = 8;
+
+// Speed Settings
+const int turnSpeed = 50;
+const int pivotSpeed = 50;
+const int forwardSpeed = 50;
+
+// Timer Variables
+unsigned long lostLineStart = 0;
+bool lineLost = false;
+
+void setup() {
+  pinMode(rightMotor, OUTPUT);
+  pinMode(leftMotor, OUTPUT);
+  
+  pinMode(leftLineSensor, INPUT);
+  pinMode(rightLineSensor, INPUT);
+}
+
+void loop() {
+  int leftLine = digitalRead(leftLineSensor);
+  int rightLine = digitalRead(rightLineSensor);
+
+  if (leftLine == HIGH && rightLine == HIGH) {
+    // Both sensors on black line → STOP
+    analogWrite(leftMotor, 0);
+    analogWrite(rightMotor, 0);
+    lineLost = false;  // Reset line lost flag
+  }
+  else if (leftLine == HIGH && rightLine == LOW) {
+    // Left sensor on black → Turn Left
+    analogWrite(leftMotor, turnSpeed);
+    analogWrite(rightMotor, 0);
+    lineLost = false;
+  delay(2000);    }
+  else if (leftLine == LOW && rightLine == HIGH) {
+    // Right sensor on black → Turn Right
+    analogWrite(leftMotor, 0);
+    analogWrite(rightMotor, turnSpeed);
+    lineLost = false;
+  delay(2000);
+        }
+  else if (leftLine == LOW && rightLine == LOW) {
+    // Both sensors on white → Line Lost Detected
+    if (!lineLost) {
+      // Just lost the line, start timer
+      lostLineStart = millis();
+      lineLost = true;
+    }
+
+    unsigned long timeLost = millis() - lostLineStart;
+
+    if (timeLost <= 3000) {
+      // Move Forward for up to 10 seconds
+      analogWrite(leftMotor, forwardSpeed);
+      analogWrite(rightMotor, forwardSpeed);
+    }
+    else {
+      // After 10 seconds → Pivot Spin Search
+      analogWrite(leftMotor, pivotSpeed);
+      analogWrite(rightMotor, 0);
+    }
+  }
+}
